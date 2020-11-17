@@ -1,0 +1,26 @@
+#限流参数格式： 系统名称_限流key: 限流速率@令牌桶大小.并有一个default配置。
+#selfratelimiter:
+#  rateLimitChannel:
+#    default: 5@10
+#    one_channelA: 2@3
+#    one_channelB: 1@2
+#    two_channelA: 1@2
+#    two_channelB: 2@4
+#  rateLimitIP:
+#    default: 55@70
+#    one_192.168.124.17: 2@3
+#    two_192.168.124.18: 1@2
+#    two_192.168.124.19: 5@10
+#  rateLimitUrlAndChannel:
+#    default: 66@80
+#    url_1: /one/limit/sprint
+#    channel_url_1: channelA
+#    limit_url_1: 1@2
+#    url_2: /one/limit/sprint2
+#    channel_url_2: channelA
+#    limit_url_2: 2@3
+#    url_3: /one/limit/sprint
+#    channel_url_3: channelB
+#    limit_url_3: 3@4
+
+    

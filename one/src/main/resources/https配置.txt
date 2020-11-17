@@ -1,0 +1,144 @@
+
+
+一，制作https证书，
+命令keytool -genkey -alias springhttps -keyalg RSA -keysize 2048 -keystore D:\cloudone.p12 -validity 365
+命令含义如下：
+
+genkey 表示要创建一个新的密钥。
+alias 表示 keystore 的别名。
+keyalg 表示使用的加密算法是 RSA ，一种非对称加密算法。
+keysize 表示密钥的长度。
+keystore 表示生成的密钥存放位置。
+validity 表示密钥的有效时间，单位为天。
+
+
+
+     
+     
+     
+
+步骤详细：
+
+
+Microsoft Windows [版本 6.1.7601]
+版权所有 (c) 2009 Microsoft Corporation。保留所有权利。
+
+C:\Users\lsy>keytool -genkey -alias springhttps -keyalg RSA -keysize 2048 -keyst
+ore D:\cloudone.p12 -validity 365
+输入密钥库口令:
+再次输入新口令:
+您的名字与姓氏是什么?
+  [Unknown]:  dev
+您的组织单位名称是什么?
+  [Unknown]:  dev
+您的组织名称是什么?
+  [Unknown]:  dev
+您所在的城市或区域名称是什么?
+  [Unknown]:  dev
+您所在的省/市/自治区名称是什么?
+  [Unknown]:  dev
+该单位的双字母国家/地区代码是什么?
+  [Unknown]:  dev
+CN=dev, OU=dev, O=dev, L=dev, ST=dev, C=dev是否正确?
+  [否]:  y
+
+输入 <springhttps> 的密钥口令
+        (如果和密钥库口令相同, 按回车):
+
+Warning:
+JKS 密钥库使用专用格式。建议使用 "keytool -importkeystore -srckeystore D:\cloudo
+ne.p12 -destkeystore D:\cloudone.p12 -deststoretype pkcs12" 迁移到行业标准格式 P
+KCS12。
+
+C:\Users\lsy>
+
+
+二，yml配置
+
+yml配置说明：
+server.ssl.ciphers= # Supported SSL ciphers.
+server.ssl.client-auth= # Whether client authentication is wanted ("want") or needed ("need"). Requires a trust store.
+server.ssl.enabled= # Enable SSL support.
+server.ssl.enabled-protocols= # Enabled SSL protocols.
+server.ssl.key-alias= # Alias that identifies the key in the key store.
+server.ssl.key-password= # Password used to access the key in the key store.
+server.ssl.key-store= # Path to the key store that holds the SSL certificate (typically a jks file).
+server.ssl.key-store-password= # Password used to access the key store.
+server.ssl.key-store-provider= # Provider for the key store.
+server.ssl.key-store-type= # Type of the key store.
+server.ssl.protocol=TLS # SSL protocol to use.
+server.ssl.trust-store= # Trust store that holds SSL certificates.
+server.ssl.trust-store-password= # Password used to access the trust store.
+server.ssl.trust-store-provider= # Provider for the trust store.
+server.ssl.trust-store-type= # Type of the trust store.
+
+
+ssl配置
+server.ssl.ciphers
+是否支持SSL ciphers.
+
+server.ssl.client-auth
+设定client authentication是wanted 还是 needed.
+
+server.ssl.enabled
+是否开启ssl，默认: true
+
+server.ssl.key-alias
+设定key store中key的别名.
+
+server.ssl.key-password
+访问key store中key的密码.
+
+server.ssl.key-store
+设定持有SSL certificate的key store的路径，通常是一个.jks文件.
+
+server.ssl.key-store-password
+设定访问key store的密码.
+
+server.ssl.key-store-provider
+设定key store的提供者.
+
+server.ssl.key-store-type
+设定key store的类型.
+
+server.ssl.protocol
+使用的SSL协议，默认: TLS
+
+server.ssl.trust-store
+持有SSL certificates的Trust store.
+
+server.ssl.trust-store-password
+访问trust store的密码.
+
+server.ssl.trust-store-provider
+设定trust store的提供者.
+
+server.ssl.trust-store-type
+指定trust store的类型.
+
+
+实际配置：
+server: 
+#   port: 8901
+   #https配置
+   port: 8443
+   ssl: 
+     key-store: classpath:cloudone.p12
+     key-alias: springhttps
+     key-store-password: 111111
+     
+访问一个接口：
+https://localhost:8443/hello 
+
+
+
+
+
+
+
+
+
+
+
+
+

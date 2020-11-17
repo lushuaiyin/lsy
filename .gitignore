@@ -1,0 +1,66 @@
+.metadata/
+.git/
+.mvn/
+.apt_generated/
+.apt_generated_tests/
+logs/
+log/
+target/
+build/
+out/
+
+*.class
+*.jar
+*.war
+*.tar
+*.7z
+*.gz
+*.ear
+*.zip
+*.rar
+*.cache
+*.diff
+*.patch
+*.tmp
+
+
+HELP.md
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**
+!**/src/test/**
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+build/
+
+### VS Code ###
+.vscode/
+
+
+# 操作系统生成的文件#
+######################
+.DS_Store
+.DS_Store?
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

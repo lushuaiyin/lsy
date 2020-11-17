@@ -1,0 +1,290 @@
+第一步：
+配置hosts文件：
+
+127.0.0.1 test.lsy.com
+
+
+
+
+keytool -genkey -alias tomcat -keypass 123456 -keyalg RSA -keysize 1024 -validity 365 -keystore G:/tomcat.keystore -storepass 123456
+
+
+您的名字与姓氏是什么?   必须是：  test.lsy.com
+
+keytool -importkeystore -srckeystore G:/tomcat.keystore -destkeystore G:/tomcat.keystore -deststoretype pkcs12
+
+
+
+
+
+
+
+Microsoft Windows [版本 6.1.7601]
+版权所有 (c) 2009 Microsoft Corporation。保留所有权利。
+
+C:\Users\lsy>keytool -genkey -alias tomcat -keypass 123456 -keyalg RSA -keysize
+1024 -validity 365 -keystore G:/tomcat.keystore -storepass 123456
+您的名字与姓氏是什么?
+  [Unknown]:  test.lsy.com
+您的组织单位名称是什么?
+  [Unknown]:  dev
+您的组织名称是什么?
+  [Unknown]:  dev
+您所在的城市或区域名称是什么?
+  [Unknown]:  dev
+您所在的省/市/自治区名称是什么?
+  [Unknown]:  dev
+该单位的双字母国家/地区代码是什么?
+  [Unknown]:  dev
+CN=test.lsy.com, OU=dev, O=dev, L=dev, ST=dev, C=dev是否正确?
+  [否]:  y
+
+
+Warning:
+JKS 密钥库使用专用格式。建议使用 "keytool -importkeystore -srckeystore G:/tomcat
+.keystore -destkeystore G:/tomcat.keystore -deststoretype pkcs12" 迁移到行业标准
+格式 PKCS12。
+
+C:\Users\lsy>keytool -importkeystore -srckeystore G:/tomcat.keystore -destkeysto
+re G:/tomcat.keystore -deststoretype pkcs12
+输入源密钥库口令:
+已成功导入别名 tomcat 的条目。
+已完成导入命令: 1 个条目成功导入, 0 个条目失败或取消
+
+Warning:
+已将 "G:/tomcat.keystore" 迁移到 Non JKS/JCEKS。将 JKS 密钥库作为 "G:/tomcat.key
+store.old" 进行了备份。
+
+C:\Users\lsy>
+
+
+
+第二步：
+
+keytool -genkey -alias client -keypass 123456 -keyalg RSA -storetype PKCS12 -keypass 123456 -storepass 123456 -keystore G:/client.p12
+
+localhost
+test.lsy.com
+
+
+
+
+
+Microsoft Windows [版本 6.1.7601]
+版权所有 (c) 2009 Microsoft Corporation。保留所有权利。
+
+C:\Users\lsy>keytool -genkey -alias client -keypass 123456 -keyalg RSA -storetyp
+e PKCS12 -keypass 123456 -storepass 123456 -keystore G:/client.p12
+您的名字与姓氏是什么?
+  [Unknown]:  test.lsy.com
+您的组织单位名称是什么?
+  [Unknown]:  dev
+您的组织名称是什么?
+  [Unknown]:  dev
+您所在的城市或区域名称是什么?
+  [Unknown]:  dev
+您所在的省/市/自治区名称是什么?
+  [Unknown]:  dev
+该单位的双字母国家/地区代码是什么?
+  [Unknown]:  dev
+CN=test.lsy.com, OU=dev, O=dev, L=dev, ST=dev, C=dev是否正确?
+  [否]:  y
+
+
+C:\Users\lsy>
+
+
+
+
+第三步：
+
+
+keytool -export -alias client -keystore G:/client.p12 -storetype PKCS12 -keypass 123456 -file G:/client.cer
+
+keytool -import -v -file G:/client.cer -keystore G:/tomcat.keystore
+
+keytool -list -v -keystore G:/tomcat.keystore
+
+
+6、通过浏览器导入客户端证书client.p12
+
+双击客户端证书client.p12点击下一步输入密码即可导入IE浏览器即可实现访问。
+Chrome和FireFox需要手工导入才能访问。
+Chrome实现：
+设置 → 显示高级设置... → 管理证书... → 个人 → 选择证书 → 确定
+FireFox实现：
+工具 → 选项 → 高级 → 证书 → 查看证书 → 导入 → 选择证书 → 确定
+
+
+
+
+
+
+
+
+
+
+
+Microsoft Windows [版本 6.1.7601]
+版权所有 (c) 2009 Microsoft Corporation。保留所有权利。
+
+C:\Users\lsy>keytool -export -alias client -keystore G:/client.p12 -storetype PK
+CS12 -keypass 123456 -file G:/client.cer
+输入密钥库口令:
+存储在文件 <G:/client.cer> 中的证书
+
+C:\Users\lsy>keytool -import -v -file G:/client.cer -keystore G:/tomcat.keystore
+
+输入密钥库口令:
+所有者: CN=test.lsy.com, OU=dev, O=dev, L=dev, ST=dev, C=dev
+发布者: CN=test.lsy.com, OU=dev, O=dev, L=dev, ST=dev, C=dev
+序列号: d853ffa
+有效期为 Sat Apr 18 17:51:43 CST 2020 至 Fri Jul 17 17:51:43 CST 2020
+证书指纹:
+         MD5:  41:4F:0B:54:DA:B4:FA:21:D8:72:47:F9:77:D2:20:27
+         SHA1: 06:57:BA:FE:48:A9:05:30:DE:D4:53:AB:78:3D:01:E4:06:D0:13:DC
+         SHA256: 25:5F:78:6B:05:8D:DF:13:CA:EA:8F:B3:1D:0B:20:59:C6:F6:4C:A5:66:
+F8:23:58:44:A1:7A:47:9A:36:CE:DE
+签名算法名称: SHA256withRSA
+主体公共密钥算法: 2048 位 RSA 密钥
+版本: 3
+
+扩展:
+
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: 60 A1 C8 07 32 58 69 FF   B3 AB 08 C9 7C BC 52 4B  `...2Xi.......RK
+0010: 8B FB A4 65                                        ...e
+]
+]
+
+是否信任此证书? [否]:  y
+证书已添加到密钥库中
+[正在存储G:/tomcat.keystore]
+
+C:\Users\lsy>keytool -list -v -keystore G:/tomcat.keystore
+输入密钥库口令:
+密钥库类型: jks
+密钥库提供方: SUN
+
+您的密钥库包含 2 个条目
+
+别名: tomcat
+创建日期: 2020-4-18
+条目类型: PrivateKeyEntry
+证书链长度: 1
+证书[1]:
+所有者: CN=test.lsy.com, OU=dev, O=dev, L=dev, ST=dev, C=dev
+发布者: CN=test.lsy.com, OU=dev, O=dev, L=dev, ST=dev, C=dev
+序列号: 21d08853
+有效期为 Sat Apr 18 17:50:25 CST 2020 至 Sun Apr 18 17:50:25 CST 2021
+证书指纹:
+         MD5:  90:71:BD:03:A9:CB:81:C7:88:02:7B:C0:F1:52:3D:42
+         SHA1: FE:9C:A9:77:22:A3:65:CD:E4:4F:18:B3:5C:F1:A8:07:95:F2:35:AB
+         SHA256: 3B:E9:61:21:AD:89:87:4B:3F:31:AD:73:54:1B:7E:80:16:64:62:AD:E4:
+40:D4:B9:D1:C2:BD:F5:82:87:BA:DC
+签名算法名称: SHA256withRSA
+主体公共密钥算法: 1024 位 RSA 密钥
+版本: 3
+
+扩展:
+
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: F3 1D F6 F7 FE 5C 13 F9   A4 5F 27 3B F6 EE 6B 74  .....\..._';..kt
+0010: E7 48 AB DB                                        .H..
+]
+]
+
+
+
+*******************************************
+*******************************************
+
+
+别名: mykey
+创建日期: 2020-4-18
+条目类型: trustedCertEntry
+
+所有者: CN=test.lsy.com, OU=dev, O=dev, L=dev, ST=dev, C=dev
+发布者: CN=test.lsy.com, OU=dev, O=dev, L=dev, ST=dev, C=dev
+序列号: d853ffa
+有效期为 Sat Apr 18 17:51:43 CST 2020 至 Fri Jul 17 17:51:43 CST 2020
+证书指纹:
+         MD5:  41:4F:0B:54:DA:B4:FA:21:D8:72:47:F9:77:D2:20:27
+         SHA1: 06:57:BA:FE:48:A9:05:30:DE:D4:53:AB:78:3D:01:E4:06:D0:13:DC
+         SHA256: 25:5F:78:6B:05:8D:DF:13:CA:EA:8F:B3:1D:0B:20:59:C6:F6:4C:A5:66:
+F8:23:58:44:A1:7A:47:9A:36:CE:DE
+签名算法名称: SHA256withRSA
+主体公共密钥算法: 2048 位 RSA 密钥
+版本: 3
+
+扩展:
+
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: 60 A1 C8 07 32 58 69 FF   B3 AB 08 C9 7C BC 52 4B  `...2Xi.......RK
+0010: 8B FB A4 65                                        ...e
+]
+]
+
+
+
+*******************************************
+*******************************************
+
+
+
+C:\Users\lsy>
+
+
+
+
+第四步：
+
+
+
+
+keytool -keystore G:/tomcat.keystore -export -alias tomcat -file G:/server.cer
+
+
+
+
+Microsoft Windows [版本 6.1.7601]
+版权所有 (c) 2009 Microsoft Corporation。保留所有权利。
+
+C:\Users\lsy>keytool -keystore G:/tomcat.keystore -export -alias tomcat -file G:
+/server.cer
+输入密钥库口令:
+存储在文件 <G:/server.cer> 中的证书
+
+C:\Users\lsy>
+
+
+
+
+第五步：
+安装证书到浏览器，
+要选择 受信任的根证书颁发机构
+
+同时把 tomcat.keystore 拷贝到工程的classpath下，
+yml配置：
+
+server: 
+#   port: 8901
+   #https配置
+   port: 8443
+   ssl: 
+     key-store: classpath:tomcat.keystore
+     key-alias: tomcat
+     key-store-password: 123456
+     key-store-type: JKS
+
+
+
+
+
+

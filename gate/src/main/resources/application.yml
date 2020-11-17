@@ -1,0 +1,306 @@
+server: 
+   port: 8888
+   undertow: 
+     threads: 
+       io: 4
+       worker: 32
+     eager-filter-init: true 
+     url-charset: UTF-8
+ #链接建立超时时间
+   connection-timeout: 10000 
+#   tomcat: 
+#     max-threads: 60 # 最大线程数
+#     min-spare-thread: 12 # 最小线程数
+#     accept-count: 10 # 队列长度
+#     max-connections: 1000 # 最大链接数
+     
+spring:
+  application:
+    name: gate
+  servlet: 
+    multipart: 
+      max-file-size: 50MB #单个文件上传的大小限制，默认1MB
+      max-request-size: 150MB #一次请求总共文件大侠限制。 如果用nginx，需要改nginx的限制，在server配置client_max_body_size 300M;
+  redis:
+    timeout: 6000
+    database: 10 
+    host: localhost #单实例redis用这个配置
+    password: #单实例redis用这个配置
+    port: 6379 #单实例redis用这个配置
+#    password: Redis@123 #集群用这个配置
+#    cluster: #集群用这个配置
+#      nodes:
+#        - 127.0.0.1:7011
+#        - 127.0.0.1:7012
+#        - 127.0.0.1:7013
+#        - 127.0.0.1:7014
+#        - 127.0.0.1:7015
+#        - 127.0.0.1:7016
+#      max-redirects: 2 #获取失败 最大重定向次数
+    lettuce:
+      pool: 
+        max-active: 1000 #连接池最大连接数（使用负值表示没有限制）
+        max-idle: 10 #连接池中的最大空闲连接
+        min-idle: 3 #连接池中的最小空闲连接
+        max-wait: -1 #连接池最大阻塞等待时间（使用负值表示没有限制）
+  redis2:
+    timeout: 6000
+    database: 10 
+    host: localhost #单实例redis用这个配置
+    password: #单实例redis用这个配置
+    port: 6379 #单实例redis用这个配置
+    lettuce:
+      pool: 
+        max-active: 1000 #连接池最大连接数（使用负值表示没有限制）
+        max-idle: 10 #连接池中的最大空闲连接
+        min-idle: 3 #连接池中的最小空闲连接
+        max-wait: -1 #连接池最大阻塞等待时间（使用负值表示没有限制）
+  cloud:
+    consul:
+      host: 127.0.0.1  #注册中心的ip或host。也是集群地址，配置一个即可。注释掉整个consul这段就可以启动，即使没有注册中心也不报错。有这段就必须有一个可用的注册中心，否则启动报错
+      port: 8500
+      discovery:
+        enabled: true #默认true。Consul Discovery Client是否注册到注册中心。和register同时设置成false，就不需要起consul服务。
+        register: true #是否将服务注册到Consul集群中心.。这个参数和上面的enabled参数同时设置成false，应用才不会注册注册中心，才可以不起consul服务！
+        deregister: true #默认true，服务停止时注销服务，即从服务列表中删除。设置成false的话，？？？
+        #service-name: ${spring.application.name}  #注册在consul上面的名字，在consul的调用中，是通过此名字调用的。默认服务名,不要改
+        instance-id: ${spring.application.name}-${spring.cloud.client.ip-address}:${server.port} #只供显示用,在ID列显示
+        health-check-interval: 10s  #配置 Consul 健康检查频率，也就是心跳频率。
+        health-check-timeout: 10s #健康检查超时
+#        health-check-critical-timeout: 10s #注册成功之后，如果关闭微服务，consul将检测60s,如果60s之后还检测不到此服务，将会把此服务从注册列表中移除.如果想重启consul，服务能主动注册到consul，这个参数必须注释掉！！！
+        #health-check-path: /tmp #健康检查路径
+        prefer-ip-address: true #表示注册时使用IP而不是hostname
+      retry:
+        initial-interval: 1000   # 初始重试间隔（以毫秒为单位
+        max-attempts: 3
+        max-interval: 2000
+        multiplier: 1.1
+    gateway:
+      httpclient: 
+        pool: 
+          type: FIXED
+          maxConnections: 12
+          acquireTimeout: 88800
+#      default-filters: 
+#      - name: Hystrix
+#        args: 
+#          name: myfallback
+#          fallbackUri: forward:/defaultfallback
+      routes:
+      - id: one
+        uri: lb://one
+        predicates: 
+          - Path=/one/**
+        filters:
+        - StripPrefix=1
+        - AddRequestHeader=X-Request-color, blue
+        - AddRequestHeader=X-Request-temp, blue
+#        - name: RequestRateLimiter
+#          args:
+#            rate-limiter: "#{@urlAndChannelJedisRedisRateLimiter}"
+#            key-resolver: "#{@selfUrlAndChannelKeyResolver}"
+#        - name: Hystrix
+#          args:  
+#            name: commandone
+#            fallbackUri: forward:/defaultfallback1
+      - id: two
+        uri: lb://two
+        predicates: 
+          - Path=/two/**
+        filters:
+        - StripPrefix=1
+#        - name: RequestRateLimiter
+#          args:
+#            rate-limiter: "#{@urlAndChannelRedisRateLimiter}"
+#            key-resolver: "#{@selfUrlAndChannelKeyResolver}" 
+        - name: Hystrix
+          args:  
+            name: commandtwo
+            fallbackUri: forward:/defaultfallback2
+
+
+# hystrix 信号量隔离，timeoutInMilliseconds毫秒后自动超时.第3个值跟Hystrix的name属性是对应的。比如，你配置的是fallbackone，name就该这样配置fallbackone.也可以平铺，例如上面
+       
+hystrix:
+  threadpool: 
+    default: 
+      coreSize: 10 
+      maxQueueSize: -1 
+      queueSizeRejectionThreshold: 1000 
+  command: 
+    myfallback: 
+      metrics: 
+        rollingStats: 
+          timeInMilliseconds: 10000 #默认10000即10秒
+      execution: 
+        isolation: 
+          strategy: THREAD # THREAD SEMAPHORE
+          thread: 
+            timeoutInMilliseconds: 5000
+        timeout: 
+          enabled: true #默认true，使用timeoutInMilliseconds作为超时时间，否则使用ribbon的超时
+      circuitBreaker:
+        forceClosed: false #默认false，想强制关闭熔断就改成true
+        requestVolumeThreshold: 2 #窗口采样大小20
+        sleepWindowInMilliseconds: 6000 #短路后休眠时间毫秒
+        errorThresholdPercentage: 30 #判断出错百分比50
+    commandone: 
+      metrics: 
+        rollingStats: 
+          timeInMilliseconds: 10000 #默认10000即10秒
+      execution: 
+        isolation: 
+          strategy: THREAD # THREAD SEMAPHORE
+          thread: 
+            timeoutInMilliseconds: 6000
+        timeout: 
+          enabled: false #默认true，使用timeoutInMilliseconds作为超时时间，否则使用ribbon的超时
+      circuitBreaker:
+        forceClosed: true #默认false，想强制关闭熔断就改成true
+        requestVolumeThreshold: 2 #窗口采样大小20
+        sleepWindowInMilliseconds: 6000 #短路后休眠时间毫秒
+        errorThresholdPercentage: 30 #判断出错百分比50
+    commandtwo: 
+      metrics: 
+        rollingStats: 
+          timeInMilliseconds: 10000 #默认10000即10秒
+      execution: 
+        isolation: 
+          strategy: THREAD # THREAD SEMAPHORE
+          thread: 
+            timeoutInMilliseconds: 3000
+        timeout: 
+          enabled: true #默认true，使用timeoutInMilliseconds作为超时时间，否则使用ribbon的超时
+      circuitBreaker:
+        forceClosed: false #默认false，想强制关闭熔断就改成true
+        requestVolumeThreshold: 2 #窗口采样大小20
+        sleepWindowInMilliseconds: 12000 #短路后休眠时间毫秒
+        errorThresholdPercentage: 50 #判断出错百分比50
+
+#实际的超时时间是(ReadTimeout+ConnectTimeout)*(MaxAutoRetries+1)*(MaxAutoRetriesNextServer+1)
+#如果MaxAutoRetries和MaxAutoRetriesNextServer都设为0，那么实际超时就是(ReadTimeout+ConnectTimeout)了
+ribbon: 
+  eureka: 
+    enabled: false
+  eager-load: 
+    enabled: true #饥饿加载，系统启动时创建好ribbon客户端而不是在使用时去创建
+  ConnectTimeout: 1000 #单位ms,请求连接超时时间
+  ReadTimeout: 2000 #单位ms,请求处理的超时时间
+  OkToRetryOnAllOperations: false #对所有操作请求都进行重试
+  MaxAutoRetriesNextServer: 0 #切换实例的重试次数
+  MaxAutoRetries: 0 #对当前实例的重试次数
+  ServerListRefreshInterval: 2000 #Interval to refresh the server list from the source
+  NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RetryRule
+#  listofServers:localhost:8001,localhost:8002,localhost:8003
+
+one:
+  ribbon: 
+    eureka: 
+      enabled: false
+    eager-load: 
+      enabled: true #饥饿加载，系统启动时创建好ribbon客户端而不是在使用时去创建
+    ConnectTimeout: 2000 #单位ms,请求连接超时时间
+    ReadTimeout: 4000 #单位ms,请求处理的超时时间
+    OkToRetryOnAllOperations: false #对所有操作请求都进行重试
+    MaxAutoRetriesNextServer: 0 #切换实例的重试次数
+    MaxAutoRetries: 0 #对当前实例的重试次数
+    ServerListRefreshInterval: 2000 #Interval to refresh the server list from the source
+    NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RetryRule
+    
+    
+feign:
+  hystrix: 
+    enabled: false
+
+#eureka:
+#  instance:
+#    prefer-ip-address: true
+#    instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}
+#    lease-expiration-duration-in-seconds: 10
+#    lease-renewal-interval-in-seconds: 3
+#  client:
+#    registry-fetch-interval-seconds: 5
+#    serviceUrl:
+#      defaultZone: http://localhost:8761/eureka/
+
+#启用监控.开启监控后，可直接通过actuator的rest接口查看服务的详细信息。例如查看网关的路由：http://localhost:8888/actuator/gateway/routes
+management:
+  endpoints:
+    web:
+      exposure:
+        include: 
+        - "*"  # 开放所有端点health，info，metrics，通过actuator/+端点名就可以获取相应的信息。默认打开health和info
+  endpoint:
+    health:
+      show-details: always  #未开启actuator/health时，我们获取到的信息是{"status":"UP"}，status的值还有可能是 DOWN。开启后打印详细信息
+
+logging: 
+  # logback.xml路径，默认为classpath:logback.xml
+  pattern:  
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
+  path: D:\cloudlogs\
+  file: D:\cloudlogs\gate.log
+  file.max-size: 3MB
+  level: 
+    root: info
+    #com.bestvike: debug
+#是否启动注册状态检查，启动后发现在注册中心状态有问题就不停的注册自己，直至成功。
+my: 
+  consul: 
+    check: 
+      register: false
+      interval: 10
+  booflag: true
+  longflag: 45678
+  
+#限流参数格式： 系统名称_限流key: 限流速率@令牌桶大小.并有一个default配置。  
+selfratelimiter:
+  rateLimitChannel:
+    default: 5@10
+    one_channelA: 2@3
+    one_channelB: 1@2
+    two_channelA: 1@2
+    two_channelB: 2@4
+  rateLimitIP:
+    default: 55@70
+    one_192.168.124.17: 2@3
+    two_192.168.124.18: 1@2
+    two_192.168.124.19: 5@10
+  rateLimitUrlAndChannel:
+    default: 6600@8000
+    url_1: /one/limit/sprint
+    channel_url_1: channelA
+    limit_url_1: 1@2
+    url_2: /one/limit/sprint2
+    channel_url_2: channelA
+    limit_url_2: 2@3
+    url_3: /one/limit/sprint
+    channel_url_3: channelB
+    limit_url_3: 3@4
+   
+#系统启动后调用的service进行初始化数据，按顺序执行InitDataService 
+initservicelist:
+  servicesMap: 
+    1: initSysDataService 
+    2: initRedisDataService
+#    12: paramService2 
+#    37: userServicegg 
+#    3: userService3 
+
+
+#jasypt加密后的密码
+mypass:
+  pass1: ENC(NfA+LtBfc26xLiHLb0EGXeNfU9TaE2tQIt7X94DrodPcUKV/tnTKQLz7bcLSM3i0)
+  
+  
+#jasypt加密配置
+jasypt:
+  encryptor:
+    password: miyao
+    algorithm: PBEWITHHMACSHA512ANDAES_256
+#    property:
+#      prefix: "ENC@["
+#      suffix: "]"
+
+

@@ -1,0 +1,171 @@
+server: 
+   port: 8888
+   
+spring:
+  application:
+    name: gate
+  redis:
+    host: localhost
+    password:
+    port: 6379
+  cloud:
+    consul:
+      host: 127.0.0.1  #注册中心的ip或host。也是集群地址，配置一个即可。注释掉整个consul这段就可以启动，即使没有注册中心也不报错。有这段就必须有一个可用的注册中心，否则启动报错
+      port: 8500
+      discovery:
+        enabled: true #默认true。Consul Discovery Client是否注册到注册中心。和register同时设置成false，就不需要起consul服务。
+        register: true #是否将服务注册到Consul集群中心.。这个参数和上面的enabled参数同时设置成false，应用才不会注册注册中心，才可以不起consul服务！
+        deregister: true #默认true，服务停止时注销服务，即从服务列表中删除。设置成false的话，？？？
+        #service-name: ${spring.application.name}  #注册在consul上面的名字，在consul的调用中，是通过此名字调用的。默认服务名,不要改
+        instance-id: ${spring.application.name}-${spring.cloud.client.ip-address}:${server.port} #只供显示用,在ID列显示
+        health-check-interval: 5s  #配置 Consul 健康检查频率，也就是心跳频率。
+        health-check-critical-timeout: 1s #健康检查失败多长时间后，取消注册。在node上显示红色叉。
+        #health-check-path: /tmp #健康检查路径
+        prefer-ip-address: true #表示注册时使用IP而不是hostname
+      retry:
+        initial-interval: 5000   # 服务监测时间间隔
+        max-attempts: 20
+    gateway:
+      discovery:
+        locator:
+          enabled: true #表明gateway开启服务注册和发现的功能，并且自动根据服务发现为每一个服务创建了一个router，这个router将以服务名开头的请求路径转发到对应的服务
+          lower-case-service-id: true # 服务名小写
+      routes:
+#      - id: employee-service
+#        uri: lb://employee-service
+#        predicates:
+#        - Path=/employee/**
+#        filters:
+#        - RewritePath=/employee/(?<path>.*), /$\{path}
+#        - name: Hystrix
+#          args:
+#            name: fallbackcmd
+#            fallbackUri: forward:/fallback
+      - id: one
+        # lb代表从注册中心获取服务，且已负载均衡方式转发
+        uri: lb://one #目标服务地址
+        predicates: #路由条件 
+          - Path=/one/**
+                       #过滤规则。 StripPrefix=1标识去掉url的第一个前缀，用后面的内容拼接到uri后面
+        filters:
+          - StripPrefix=1
+#          - AddRequestHeader=X-Request-Channel, CC
+          - RewritePath=/one/(?<path>.*), /$\{path}
+#          - name: Hystrix
+#            args:
+#             name: default
+#             fallbackUri: forward:/defaultfallback1
+                            #限流配置
+          - name: RequestRateLimiter
+            args:
+                                      # 令牌桶每秒填充平均速率,即允许用户每秒处理多少个请求
+              redis-rate-limiter.replenishRate: 1
+                                       # 令牌桶的上限。允许在一秒钟内完成的最大请求数
+              redis-rate-limiter.burstCapacity: 2
+                                       # 使用SpEL表达式从Spring容器中获取Bean对象. 用于限流的键的解析器的 Bean 对象的名字。它使用 SpEL 表达式根据#{@beanName}从 Spring 容器中获取 Bean 对象
+              #KeyResolver需要实现resolve方法，比如根据Hostname进行限流，则需要用hostAddress去判断。实现完KeyResolver之后，需要将这个类的Bean注册到Ioc容器中。限流后返回429
+              key-resolver: "#{@uriKeyResolverMy}"
+              #key-resolver: '#{@hostAddrKeyResolver}'
+              #key-resolver: "#{@pathKeyResolver}"
+      - id: two
+        # lb代表从注册中心获取服务，且已负载均衡方式转发
+        uri: lb://two #目标服务地址
+        predicates: #路由条件
+          - Path=/two/**
+        #过滤规则。 StripPrefix=1标识去掉url的第一个前缀，用后面的内容拼接到uri后面
+        filters:
+          - StripPrefix=1
+          - AddRequestHeader=X-Request-Channel, CC
+                           #熔断配置Hystrix fallbackcmd CircuitBreaker
+#          - name: Hystrix
+#            args:
+#             name: fallbacktwo
+#             fallbackUri: forward:/defaultfallback2 #rest接口地址
+                            #限流配置
+          - name: RequestRateLimiter
+            args:
+              # 令牌桶每秒填充平均速率,即允许用户每秒处理多少个请求
+              redis-rate-limiter.replenishRate: 1
+              # 令牌桶的上限。允许在一秒钟内完成的最大请求数
+              redis-rate-limiter.burstCapacity: 2
+              # 使用SpEL表达式从Spring容器中获取Bean对象. 用于限流的键的解析器的 Bean 对象的名字。它使用 SpEL 表达式根据#{@beanName}从 Spring 容器中获取 Bean 对象
+              #KeyResolver需要实现resolve方法，比如根据Hostname进行限流，则需要用hostAddress去判断。实现完KeyResolver之后，需要将这个类的Bean注册到Ioc容器中。限流后返回429
+              key-resolver: "#{@uriKeyResolverMy}"
+              #key-resolver: '#{@hostAddrKeyResolver}'
+              #key-resolver: "#{@pathKeyResolver}"
+      default-filters:
+      - name: Hystrix
+        args:
+          name: default
+          fallbackUri: forward:/defaultfallback
+
+#hystrix.command.fallback.execution.isolation.thread.timeoutInMilliseconds: 5000
+#hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds: 5000
+
+#hystrix.command.fallbackone.execution.isolation.thread.timeoutInMilliseconds: 7000
+#hystrix.command.fallbacktwo.execution.isolation.thread.timeoutInMilliseconds: 9000
+
+
+# hystrix 信号量隔离，timeoutInMilliseconds毫秒后自动超时.第3个值跟Hystrix的name属性是对应的。比如，你配置的是fallbackone，name就该这样配置fallbackone.也可以平铺，例如上面
+#但是实际测试中，我发现只有default-filters的配置起作用，单独配置的fallbackone，fallbacktwo都不起作用，不知道为什么
+hystrix:
+  command:
+    default:
+      fallback: 
+        enabled: false
+#      circuitBreaker:
+#        enabled: false
+      execution:
+        timeout: 
+          enabled: false
+        isolation:
+          strategy: THREAD # THREAD SEMAPHORE
+          thread:
+            timeoutInMilliseconds: 10000
+    fallbackone:
+      execution:
+        isolation:
+          strategy: SEMAPHORE
+          thread:
+            timeoutInMilliseconds: 7000
+    fallbacktwo:
+      execution:
+        isolation:
+          strategy: SEMAPHORE
+          thread:
+            timeoutInMilliseconds: 9000
+  shareSecurityContext: true
+
+#feign:
+#  hystrix: 
+#    enabled: false
+
+#eureka:
+#  instance:
+#    prefer-ip-address: true
+#    instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}
+#    lease-expiration-duration-in-seconds: 10
+#    lease-renewal-interval-in-seconds: 3
+#  client:
+#    registry-fetch-interval-seconds: 5
+#    serviceUrl:
+#      defaultZone: http://localhost:8761/eureka/
+
+#启用监控.开启监控后，可直接通过actuator的rest接口查看服务的详细信息。例如查看网关的路由：http://localhost:8888/actuator/gateway/routes
+management:
+  endpoints:
+    web:
+      exposure:
+        include: 
+        - "*"  # 开放所有端点health，info，metrics，通过actuator/+端点名就可以获取相应的信息。默认打开health和info
+  endpoint:
+    health:
+      show-details: always  #未开启actuator/health时，我们获取到的信息是{"status":"UP"}，status的值还有可能是 DOWN。开启后打印详细信息
+
+#是否启动注册状态检查，启动后发现在注册中心状态有问题就不停的注册自己，直至成功。
+my: 
+  consul: 
+    check: 
+      register: true
+      interval: 10
+  

@@ -1,0 +1,144 @@
+server: 
+   port: 8901
+   #https配置
+#   port: 8443
+#   ssl: 
+#     key-store: classpath:tomcat.keystore
+#     key-alias: tomcat
+#     key-store-password: 123456
+#     key-store-type: JKS
+spring:  
+  application: 
+    name: one
+  rabbitmq: 
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    listener: 
+      simple: 
+        acknowledge-mode: manual
+  redis:
+    timeout: 6000ms
+    database: 10 
+    host: localhost #单实例redis用这个配置
+    password: #单实例redis用这个配置
+    port: 6379 #单实例redis用这个配置
+#    password: Redis@123 #集群用这个配置
+#    cluster: #集群用这个配置
+#      nodes:
+#        - 127.0.0.1:7011
+#        - 127.0.0.1:7012
+#        - 127.0.0.1:7013
+#        - 127.0.0.1:7014
+#        - 127.0.0.1:7015
+#        - 127.0.0.1:7016
+#      max-redirects: 2 #获取失败 最大重定向次数
+    lettuce:
+      pool: 
+        max-active: 1000 #连接池最大连接数（使用负值表示没有限制）
+        max-idle: 10 #连接池中的最大空闲连接
+        min-idle: 3 #连接池中的最小空闲连接
+        max-wait: -1 #连接池最大阻塞等待时间（使用负值表示没有限制）
+  cloud:
+    consul:
+      host: 127.0.0.1  #注册中心的ip或host。也是集群地址，配置一个即可。注释掉整个consul这段就可以启动，即使没有注册中心也不报错。有这段就必须有一个可用的注册中心，否则启动报错
+      port: 8500
+      discovery:
+        enabled: true #默认true。Consul Discovery Client是否注册到注册中心。和register同时设置成false，就不需要起consul服务。
+        register: true #是否将服务注册到Consul集群中心.。这个参数和上面的enabled参数同时设置成false，应用才不会注册注册中心，才可以不起consul服务！
+        deregister: true #默认true，服务停止时注销服务，即从服务列表中删除。设置成false的话，？？？
+        #service-name: ${spring.application.name}  #注册在consul上面的名字，在consul的调用中，是通过此名字调用的。默认服务名,不要改
+        instance-id: ${spring.application.name}-${spring.cloud.client.ip-address}:${server.port} #只供显示用,在ID列显示
+        health-check-interval: 5s  #配置 Consul 健康检查频率，也就是心跳频率。
+#        health-check-critical-timeout: 2s #健康检查失败多长时间后，取消注册。在node上显示红色叉。配了这个参数，如果consul集群的server重启会注销应用！
+        #健康检查路径。默认是使用actuator的健康检查接口：http://localhost:8901/actuator/health返回{"status":"UP"}。其实只看http状态码是200就认为服务正常。你可以换成自己的一个rest接口替代actuator
+        #health-check-path: /hello
+        prefer-ip-address: true #表示注册时使用IP而不是hostname
+      retry:
+        initial-interval: 5000   # 服务监测时间间隔
+        max-attempts: 20
+#eureka:
+#  instance:
+#    prefer-ip-address: true
+#    hostname: ${spring.application.name}
+#    instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}
+#           #定义服务失效的时间
+#    lease-expiration-duration-in-seconds: 10 #告诉服务端，如果我N秒之内没有给你发心跳，就代表我“死”了，将我踢出掉
+#           #服务续约任务的调用间隔时间
+#    lease-renewal-interval-in-seconds: 3 #每间隔N秒，向服务端发送一次心跳，证明自己依然”存活“
+#    #statusPageUrl: https://${eureka.hostname}/info
+#    #healthCheckUrl: https://${eureka.hostname}/health #默认/health
+#    #homePageUrl: https://${eureka.hostname}/
+#  client: 
+#    registry-fetch-interval-seconds: 5 #每隔N秒请求获取一份服务清单 
+#    serviceUrl: 
+#      defaultZone: http://localhost:8761/eureka/
+#    healthcheck:
+#      enabled: true
+
+#启用监控.开启监控后，可直接通过actuator的rest接口查看服务的详细信息。例如查看网关的路由：http://localhost:8888/actuator/gateway/routes
+management:
+  endpoints:
+    web:
+      exposure:
+        include: 
+        - "*"  # 开放所有端点health，info，metrics，通过actuator/+端点名就可以获取相应的信息。默认打开health和info
+  endpoint:
+    health:
+      show-details: always  #未开启actuator/health时，我们获取到的信息是{"status":"UP"}，status的值还有可能是 DOWN。开启后打印详细信息
+
+
+
+logging: 
+  # logback.xml路径，默认为classpath:logback.xml
+  pattern:  
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
+  path: D:\cloudlogs\
+  file: D:\cloudlogs\one.log
+  file.max-size: 3MB
+  level: 
+    root: info
+    #com.bestvike: debug
+
+# Hystrix settings
+hystrix:
+  threadpool: 
+    default: 
+      coreSize: 2
+      maxQueueSize: 1
+      queueSizeRejectionThreshold: 1
+  command:
+    default:
+      execution:
+        isolation:
+          strategy: THREAD
+          thread:
+            # 线程超时15秒(15000),调用Fallback方法
+            timeoutInMilliseconds: 1000
+      metrics:
+        rollingStats:
+          timeInMilliseconds: 5000
+      circuitBreaker:
+        # 10秒内出现3个以上请求(已临近阀值),并且出错率在50%以上,开启断路器.断开服务,调用Fallback方法
+        requestVolumeThreshold: 3
+        sleepWindowInMilliseconds: 2000
+        errorThresholdPercentage: 50
+
+
+turbine: 
+  aggregator: 
+    cluster-config: default
+  # 配置注册中心中的serviceId列表，表明监控哪些服务app-config: vis-server-config,vis-basic-zuul
+  app-config: one
+  cluster-name-expression: new String("default")
+  combine-host-port: true
+  instanceUrlSuffix: actuator/hystrix.stream
+#是否启动注册状态检查，启动后发现在注册中心状态有问题就不停的注册自己，直至成功。
+my: 
+  consul: 
+    check: 
+      register: false
+      interval: 10

@@ -1,0 +1,37 @@
+spring: 
+  profiles: 
+    active: dev
+  cloud:
+    consul:
+      host: 127.0.0.1  #注册中心的ip或host。也是集群地址，配置一个即可。注释掉整个consul这段就可以启动，即使没有注册中心也不报错。有这段就必须有一个可用的注册中心，否则启动报错
+      port: 8500
+      discovery:
+        enabled: true #默认true。Consul Discovery Client是否注册到注册中心。和register同时设置成false，就不需要起consul服务。
+        register: true #是否将服务注册到Consul集群中心.。这个参数和上面的enabled参数同时设置成false，应用才不会注册注册中心，才可以不起consul服务！
+        deregister: true #默认true，服务停止时注销服务，即从服务列表中删除。设置成false的话，？？？
+        #service-name: ${spring.application.name}  #注册在consul上面的名字，在consul的调用中，是通过此名字调用的。默认服务名,不要改
+        instance-id: ${spring.application.name}-${spring.cloud.client.ip-address}:${server.port} #只供显示用,在ID列显示
+        health-check-interval: 5s  #配置 Consul 健康检查频率，也就是心跳频率。
+#        health-check-critical-timeout: 2s #健康检查失败多长时间后，取消注册。在node上显示红色叉。配了这个参数，如果consul集群的server重启会注销应用！
+        #健康检查路径。默认是使用actuator的健康检查接口：http://localhost:8901/actuator/health返回{"status":"UP"}。其实只看http状态码是200就认为服务正常。你可以换成自己的一个rest接口替代actuator
+        #health-check-path: /hello
+        prefer-ip-address: true #表示注册时使用IP而不是hostname
+      retry:
+        initial-interval: 5000   # 服务监测时间间隔
+        max-attempts: 20
+      #consul作为配置中心,官网属性https://docs.spring.io/spring-cloud-consul/docs/2.2.4.RELEASE/reference/html/appendix.html
+      config:
+        enabled: true          # 启用 consul 配置中心.默认是true
+        format: YAML           # 配置转码方式，默认 key-value，其他可选：yaml/files/properties
+        data-key: data         # 配置 key 值，value 对应整个配置文件。例如config/application,dev/data
+        prefix: config         # 基础文件夹，默认值 config.
+        default-context: one  #应用文件夹，默认值 application，consul 会加载 config/<applicationName> 和 config/<defaultContext> 两份配置，设置为相同值，则只加载一份.sets the folder name used by all applications
+#        profile-separator: '-'   #环境分隔符，默认值 ",例如例如config/application,dev/data修改后是config/application-dev/data
+        watch: 
+         enabled: true         # 启用配置自动刷新
+         delay: 1000           # 刷新频率，单位：毫秒
+  servlet: 
+    multipart: 
+      enabled: true 
+      max-file-size: 100MB
+      max-request-size: 300MB

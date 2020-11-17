@@ -1,0 +1,24 @@
+server: 
+   port: 8901
+   #https配置
+#   port: 8443
+#   ssl: 
+#     key-store: classpath:tomcat.keystore
+#     key-alias: tomcat
+#     key-store-password: 123456
+#     key-store-type: JKS
+spring:  
+  application: 
+    name: one
+
+
+#启用监控.开启监控后，可直接通过actuator的rest接口查看服务的详细信息。例如查看网关的路由：http://localhost:8888/actuator/gateway/routes
+management:
+  endpoints:
+    web:
+      exposure:
+        include: 
+        - "*"  # 开放所有端点health，info，metrics，通过actuator/+端点名就可以获取相应的信息。默认打开health和info
+  endpoint:
+    health:
+      show-details: always  #未开启actuator/health时，我们获取到的信息是{"status":"UP"}，status的值还有可能是 DOWN。开启后打印详细信息
